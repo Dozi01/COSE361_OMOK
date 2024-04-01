@@ -126,7 +126,7 @@ class MCTS(object):
             state.do_move(action)
 
         action_probs, _ = self._policy(state)
-        # Check for end of game
+        # Check for end of game.
         end, winner = state.game_end()
         if not end:
             node.expand(action_probs)

@@ -17,17 +17,8 @@ To play with the trained AI models, only need:
 - Python >= 2.7
 - Numpy >= 1.11
 
-To train the AI model from scratch, further need, either:
-- Theano >= 0.7 and Lasagne >= 0.1      
-or
+To train the AI model from scratch, further need :
 - PyTorch >= 0.2.0    
-or
-- TensorFlow
-
-**PS**: if your Theano's version > 0.7, please follow this [issue](https://github.com/aigamedev/scikit-neuralnetwork/issues/235) to install Lasagne,  
-otherwise, force pip to downgrade Theano to 0.7 ``pip install --upgrade theano==0.7.0``
-
-If you would like to train the model using other DL frameworks, you only need to rewrite policy_value_net.py.
 
 ### Getting Started
 To play with provided models, run the following script from the directory:  
@@ -59,6 +50,3 @@ The models (best_policy.model and current_policy.model) will be saved every a fe
 **Tips for training:**
 1. It is good to start with a 6 * 6 board and 4 in a row. For this case, we may obtain a reasonably good model within 500~1000 self-play games in about 2 hours.
 2. For the case of 8 * 8 board and 5 in a row, it may need 2000~3000 self-play games to get a good model, and it may take about 2 days on a single PC.
-
-### Further reading
-My article describing some details about the implementation in Chinese: [https://zhuanlan.zhihu.com/p/32089487](https://zhuanlan.zhihu.com/p/32089487) 
