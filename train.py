@@ -14,9 +14,10 @@ from mcts_pure import MCTSPlayer as MCTS_Pure
 from mcts_alphaZero import MCTSPlayer
 # from policy_value_net import PolicyValueNet  # Theano and Lasagne
 from policy_value_net_pytorch import PolicyValueNet  # Pytorch
+import argparse
 
 class TrainPipeline():
-    def __init__(self, init_model=None):
+    def __init__(self, args):
         # params of the board and the game
         self.board_width = 19
         self.board_height = 19
@@ -32,9 +33,9 @@ class TrainPipeline():
         self.n_playout = 400  # num of simulations for each move
         self.c_puct = 5
         self.buffer_size = 10000
-        self.batch_size = 512  # mini-batch size for training
+        self.batch_size = args.bs  # mini-batch size for training
         self.data_buffer = deque(maxlen=self.buffer_size)
-        self.play_batch_size = 1
+        self.play_batch_size = args.play_batch_size
         self.epochs = 5  # num of train_steps for each update
         self.kl_targ = 0.02
         self.check_freq = 50
@@ -43,15 +44,17 @@ class TrainPipeline():
         # num of simulations used for the pure mcts, which is used as
         # the opponent to evaluate the trained policy
         self.pure_mcts_playout_num = 1000
-        if init_model:
+        if args.init_model:
             # start training from an initial policy-value net
             self.policy_value_net = PolicyValueNet(self.board_width,
                                                    self.board_height,
-                                                   model_file=init_model)
+                                                   model_file=args.init_model,
+                                                   use_gpu = args.gpu)
         else:
             # start training from a new policy-value net
             self.policy_value_net = PolicyValueNet(self.board_width,
-                                                   self.board_height)
+                                                   self.board_height,
+                                                   use_gpu = args.gpu)
         self.mcts_player = MCTSPlayer(self.policy_value_net.policy_value_fn,
                                       c_puct=self.c_puct,
                                       n_playout=self.n_playout,
@@ -188,5 +191,17 @@ class TrainPipeline():
 
 
 if __name__ == '__main__':
-    training_pipeline = TrainPipeline()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--init_model', type=str, 
+                        default=None, 
+                        help='init_model path')
+    parser.add_argument('--gpu', action='store_true',
+                        help='True if using gpu machine')
+    parser.add_argument('--bs', type=int, default=512,
+                        help='Mini batch size')
+    parser.add_argument('--play_batch_size', type=int, default=1,
+                        help='self game play batch size')
+    args = parser.parse_args()
+    print(args)
+    training_pipeline = TrainPipeline(args)
     training_pipeline.run()
