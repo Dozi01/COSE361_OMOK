@@ -7,9 +7,8 @@ Input your move in the format: 2,3
 """
 
 from __future__ import print_function
-import pickle
 from game import Board, Game
-from mcts_pure import MCTSPlayer as MCTS_Pure
+from mcts import MCTSPlayer
 
 
 class Human(object):
@@ -50,7 +49,7 @@ def run():
 
         # ############### human VS AI ###################
 
-        mcts_player = MCTS_Pure(c_puct=5, n_playout=1000)
+        mcts_player = MCTSPlayer(c_puct=5, n_playout=1000)
 
         # human player, input your move in the format: 2,3
         human = Human()
