@@ -41,22 +41,23 @@ class Human(object):
 
 def run():
     n = 5
-    width, height = 9, 9
-    # model_file = 'best_policy.model'
+    width, height = 19, 19
+    time_limit = 0
+
     try:
         board = Board(width=width, height=height, n_in_row=n)
         game = Game(board)
 
         # ############### human VS AI ###################
-
-        mcts_player = MCTSPlayer(c_puct=5, n_playout=1000)
+        mcts_player = MCTSPlayer(c_puct=3, n_playout=100)
 
         # human player, input your move in the format: 2,3
         human = Human()
 
         # set start_player=0 for human first
         start_player = int(input("Select the first player\n Human = 0, AI = 1 : "))
-        game.start_play(human, mcts_player, start_player=start_player, is_shown=1)
+        time_limit = int(input("Insert the time limit for each move, 0 for infinite \n time : "))
+        game.start_play(human, mcts_player, start_player=start_player, is_shown=1, time_limit = time_limit)
     except KeyboardInterrupt:
         print('\n\rquit')
 

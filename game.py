@@ -5,7 +5,7 @@
 
 from __future__ import print_function
 import numpy as np
-
+import time
 
 class Board(object):
     """board for the game"""
@@ -159,7 +159,7 @@ class Game(object):
                     print('_'.center(4), end='')
             print('\r\n')
 
-    def start_play(self, player1, player2, start_player=0, is_shown=1):
+    def start_play(self, player1, player2, start_player=0, is_shown=1, time_limit = 0):
         """start a game between two players"""
         if start_player not in (0, 1):
             raise Exception('start_player should be either 0 (player1 first) '
@@ -174,11 +174,23 @@ class Game(object):
         while True:
             current_player = self.board.get_current_player()
             player_in_turn = players[current_player]
+
+            start_time = time.time()
             move = player_in_turn.get_action(self.board)
             self.board.do_move(move)
+            end_time = time.time()
+            elapsed_time = end_time - start_time
             if is_shown:
                 self.graphic(self.board, player1.player, player2.player)
             end, winner = self.board.game_end()
+
+            if time_limit != 0:
+                print(f"{elapsed_time:.1f} / {time_limit} seconds for this move")
+                if elapsed_time > time_limit:
+                    print("time limit!")
+                    end = True
+                    winner = self.board.get_current_player()
+                    
             if end:
                 if is_shown:
                     if winner != -1:
