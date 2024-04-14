@@ -7,13 +7,12 @@ A pure implementation of the Monte Carlo Tree Search (MCTS)
 
 import numpy as np
 import copy
-from operator import itemgetter
 
 
 def distance_policy_value_fn(board):
     """
     게임 보드와 마지막 무브 인덱스를 받아, 해당 무브 주변의 수에 높은 확률을,
-    먼 수에는 낮은 확률을 부여하는 Policy Value Function을 구현한다.
+    먼 수에는 낮은 확률을 부여하는 Policy Value Function
     """
     action_probs = np.zeros(len(board.availables))
     last_move = board.last_move
@@ -22,29 +21,15 @@ def distance_policy_value_fn(board):
         return (zip(board.availables, action_probs)), 0
 
     last_move_location = board.move_to_location(last_move)
-    
+
     # 각 가능한 수에 대해 거리에 따라 가중치 계산
     for i, move in enumerate(board.availables):
         move_location = board.move_to_location(move)
-        # manhattan 거리 계산
-        distance = abs(move_location[0] - last_move_location[0]) + abs(move_location[1] - last_move_location[1])
+        # checkerboard 거리 계산
+        distance = max(abs(move_location[0] - last_move_location[0]), abs(move_location[1] - last_move_location[1]))
         # 거리가 가까울수록 높은 확률 부여
-        weight = max(0, 0.5 - (distance / board.width))  # 선형 감소 사용
+        weight = np.exp(-distance) 
         action_probs[i] = weight
-
-        future_board = copy.deepcopy(board)
-        future_board.do_move(move)
-        # 연속된 돌의 수가 4개인 경우, 가중치 할당.
-        win, winner = future_board.has_a_winner(for_eval = True, n_for_eval = 1)
-        if win:
-            action_probs[i] += 1.0
-
-        # 연속된 돌의 수가 3개인 경우, 가중치 할당.
-        win, winner = future_board.has_a_winner(for_eval = True, n_for_eval = 2)
-        if win:
-            action_probs[i] += 0.5
-
-   
 
     # 확률 값들을 정규화
     total = np.sum(action_probs)
@@ -52,7 +37,45 @@ def distance_policy_value_fn(board):
         action_probs /= total
     else:
         action_probs = np.ones(len(board.availables)) / len(board.availables)  # 만약 계산 오류가 발생하면 균등 확률 부여
+    return list(zip(board.availables, action_probs)), 0  # 점수는 0으로 고정, 실제 게임 상황에 따라 조절 가능
 
+
+def distance_policy_value_fn_1(board):
+    """
+    게임 보드와 마지막 무브 인덱스를 받아, 해당 무브 주변의 수에 높은 확률을,
+    먼 수에는 낮은 확률을 부여하는 Policy Value Function
+    """
+    action_probs = np.zeros(len(board.availables))
+    last_move = board.last_move
+    if last_move == -1:  # 첫 수인 경우
+        action_probs = np.ones(len(board.availables)) / len(board.availables)
+        return (zip(board.availables, action_probs)), 0
+
+    last_move_location = board.move_to_location(last_move)
+
+    # 각 가능한 수에 대해 거리에 따라 가중치 계산
+    for i, move in enumerate(board.availables):
+        move_location = board.move_to_location(move)
+        # distance 계산
+        x_dis = abs(move_location[0] - last_move_location[0])
+        y_dis = abs(move_location[1] - last_move_location[1])
+        # 마지막 수로부터 가로, 세로, 대각선 방향만 search
+        if (x_dis == y_dis or x_dis == 0 or y_dis == 0):
+            distance = max(x_dis, y_dis)
+            if distance <= 4:
+                action_probs[i] = 1
+                if distance == 1:
+                    action_probs[i] = 2
+            else: 
+                action_probs[i] = 0
+        else:
+            action_probs[i] = 0
+    # 확률 값들을 정규화
+    total = np.sum(action_probs)
+    if total > 0:
+        action_probs /= total
+    else:
+        action_probs = np.ones(len(board.availables)) / len(board.availables)  # 만약 계산 오류가 발생하면 균등 확률 부여
     return list(zip(board.availables, action_probs)), 0  # 점수는 0으로 고정, 실제 게임 상황에 따라 조절 가능
 
 
@@ -150,7 +173,6 @@ class MCTS(object):
         node = self._root
         while(1):
             if node.is_leaf():
-
                 break
             # Greedily select next move.
             action, node = node.select(self._c_puct)
@@ -177,8 +199,16 @@ class MCTS(object):
             if end:
                 break
             action_probs, _ = distance_policy_value_fn(state)
-            max_action = max(action_probs, key=itemgetter(1))[0]
-            state.do_move(max_action)
+            actions, probabilities = zip(*action_probs)  # 동작과 확률을 분리
+
+            # numpy의 random.choice를 사용하여 주어진 확률 분포에 따라 동작을 랜덤하게 선택
+            selected_action = np.random.choice(actions, p=probabilities)
+
+            # 선택된 동작을 사용
+            state.do_move(selected_action)
+
+            # max_action = max(action_probs, key=itemgetter(1))[0]
+            # state.do_move(max_action)
         else:
             # If no break from the loop, issue a warning.
             print("WARNING: rollout reached move limit")
