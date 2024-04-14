@@ -49,7 +49,7 @@ def run():
         game = Game(board)
 
         # ############### human VS AI ###################
-        mcts_player = MCTSPlayer(c_puct=5, n_playout=1000)
+        mcts_player = MCTSPlayer(c_puct=5, n_playout=100)
 
         # human player, input your move in the format: 2,3
         human = Human()

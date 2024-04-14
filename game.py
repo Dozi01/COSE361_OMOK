@@ -83,12 +83,15 @@ class Board(object):
         )
         self.last_move = move
 
-    def has_a_winner(self):
+    def has_a_winner(self, for_eval = False, n_for_eval:int = 0):
         width = self.width
         height = self.height
         states = self.states
         n = self.n_in_row
-
+        
+        if for_eval == True:
+            n -= n_for_eval
+            
         moved = list(set(range(width * height)) - set(self.availables))
         if len(moved) < self.n_in_row *2-1:
             return False, -1

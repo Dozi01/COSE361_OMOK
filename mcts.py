@@ -10,19 +10,50 @@ import copy
 from operator import itemgetter
 
 
-def rollout_policy_fn(board):
-    """a coarse, fast version of policy_fn used in the rollout phase."""
-    # rollout randomly
-    action_probs = np.random.rand(len(board.availables))
-    return zip(board.availables, action_probs)
+def distance_policy_value_fn(board):
+    """
+    게임 보드와 마지막 무브 인덱스를 받아, 해당 무브 주변의 수에 높은 확률을,
+    먼 수에는 낮은 확률을 부여하는 Policy Value Function을 구현한다.
+    """
+    action_probs = np.zeros(len(board.availables))
+    last_move = board.last_move
+    if last_move == -1:  # 첫 수인 경우
+        action_probs = np.ones(len(board.availables)) / len(board.availables)
+        return (zip(board.availables, action_probs)), 0
 
+    last_move_location = board.move_to_location(last_move)
+    
+    # 각 가능한 수에 대해 거리에 따라 가중치 계산
+    for i, move in enumerate(board.availables):
+        move_location = board.move_to_location(move)
+        # manhattan 거리 계산
+        distance = abs(move_location[0] - last_move_location[0]) + abs(move_location[1] - last_move_location[1])
+        # 거리가 가까울수록 높은 확률 부여
+        weight = max(0, 0.5 - (distance / board.width))  # 선형 감소 사용
+        action_probs[i] = weight
 
-def policy_value_fn(board):
-    """a function that takes in a state and outputs a list of (action, probability)
-    tuples and a score for the state"""
-    # return uniform probabilities and 0 score for pure MCTS
-    action_probs = np.ones(len(board.availables))/len(board.availables)
-    return zip(board.availables, action_probs), 0
+        future_board = copy.deepcopy(board)
+        future_board.do_move(move)
+        # 연속된 돌의 수가 4개인 경우, 가중치 할당.
+        win, winner = future_board.has_a_winner(for_eval = True, n_for_eval = 1)
+        if win:
+            action_probs[i] += 1.0
+
+        # 연속된 돌의 수가 3개인 경우, 가중치 할당.
+        win, winner = future_board.has_a_winner(for_eval = True, n_for_eval = 2)
+        if win:
+            action_probs[i] += 0.5
+
+   
+
+    # 확률 값들을 정규화
+    total = np.sum(action_probs)
+    if total > 0:
+        action_probs /= total
+    else:
+        action_probs = np.ones(len(board.availables)) / len(board.availables)  # 만약 계산 오류가 발생하면 균등 확률 부여
+
+    return list(zip(board.availables, action_probs)), 0  # 점수는 0으로 고정, 실제 게임 상황에 따라 조절 가능
 
 
 class TreeNode(object):
@@ -130,7 +161,7 @@ class MCTS(object):
         end, winner = state.game_end()
         if not end:
             node.expand(action_probs)
-        # Evaluate the leaf node by random rollout
+        # Evaluate the leaf node by rollout
         leaf_value = self._evaluate_rollout(state)
         # Update value and visit count of nodes in this traversal.
         node.update_recursive(-leaf_value)
@@ -145,7 +176,7 @@ class MCTS(object):
             end, winner = state.game_end()
             if end:
                 break
-            action_probs = rollout_policy_fn(state)
+            action_probs, _ = distance_policy_value_fn(state)
             max_action = max(action_probs, key=itemgetter(1))[0]
             state.do_move(max_action)
         else:
@@ -185,7 +216,7 @@ class MCTS(object):
 class MCTSPlayer(object):
     """AI player based on MCTS"""
     def __init__(self, c_puct=5, n_playout=2000):
-        self.mcts = MCTS(policy_value_fn, c_puct, n_playout)
+        self.mcts = MCTS(distance_policy_value_fn, c_puct, n_playout)
 
     def set_player_ind(self, p):
         self.player = p
@@ -195,6 +226,12 @@ class MCTSPlayer(object):
 
     def get_action(self, board):
         sensible_moves = board.availables
+        # AI가 첫 수를 둘 경우, 중앙으로 첫 수 고정
+        if len(sensible_moves) == board.width * board.height:
+            move = board.width * board.height // 2
+            self.mcts.update_with_move(-1)
+            return move
+        
         if len(sensible_moves) > 0:
             move = self.mcts.get_move(board)
             self.mcts.update_with_move(-1)
