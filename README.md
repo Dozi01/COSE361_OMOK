@@ -26,8 +26,8 @@ mcts_player = MCTSPlayer(c_puct=5, n_playout=1000)
 ```
 
 ### Image
-![image_1][https://github.com/Dozi01/COSE361_OMOK/blob/master/asset/image_1.png]
-![image_2][https://github.com/Dozi01/COSE361_OMOK/blob/master/asset/image_2.png]
+![image_1](https://github.com/Dozi01/COSE361_OMOK/blob/master/asset/image_1.png)
+![image_2](https://github.com/Dozi01/COSE361_OMOK/blob/master/asset/image_2.png)
 
 ### Reference
 https://github.com/junxiaosong/AlphaZero_Gomoku
