@@ -143,21 +143,22 @@ class Game(object):
         print("Player", player1, "with X".rjust(3))
         print("Player", player2, "with O".rjust(3))
         print()
+        print('  ', end='')
         for x in range(width):
-            print("{0:4}".format(x), end='')
-        print('\r\n')
+            print("{0:3}".format(x), end='')
+        print('\r')
         for i in range(height - 1, -1, -1):
-            print("{0:2d}".format(i), end='')
+            print("{0:2d}".format(i), end=' ')
             for j in range(width):
                 loc = i * width + j
                 p = board.states.get(loc, -1)
                 if p == player1:
-                    print('X'.center(4), end='')
+                    print('X'.center(3), end='')
                 elif p == player2:
-                    print('O'.center(4), end='')
+                    print('O'.center(3), end='')
                 else:
-                    print('_'.center(4), end='')
-            print('\r\n')
+                    print('_'.center(3), end='')
+            print('\r')
 
     def start_play(self, player1, player2, start_player=0, is_shown=1, time_limit = 0):
         """start a game between two players"""
